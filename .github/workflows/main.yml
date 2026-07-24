@@ -28,7 +28,7 @@ jobs:
         env:
           password: ${{ secrets.password }}
           #run: python decrypt.py
-          run: python jtv.py
+        run: python jtv.py
         
           
       - name: commit and push changes
