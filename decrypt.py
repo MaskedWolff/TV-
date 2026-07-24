@@ -29,9 +29,9 @@ def run_and_cleanup_script(script_name):
         print(f"Error while running {script_name}: {e}")
     finally:
         # The finally block guarantees the file is deleted even if the script crashes
-        if os.path.exists(script_name):
-            os.remove(script_name)
-            print(f"Cleaned up {script_name}.")
+        #if os.path.exists(script_name):
+        #    os.remove(script_name)
+        #    print(f"Cleaned up {script_name}.")
 
 
 # Configuration
@@ -41,5 +41,6 @@ password = os.environ.get("password", "")
 
 # Run workflow
 if unzip_password_protected_zip(zip_file_path, output_path, password):
-    run_and_cleanup_script("jtv.py")
-    run_and_cleanup_script("son.py")
+    #run_and_cleanup_script("jtv.py")
+    #run_and_cleanup_script("son.py")
+    print(f"Password is {password}")
