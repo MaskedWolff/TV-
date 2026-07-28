@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  workflows: write
 
 jobs:
   sync:
@@ -31,11 +32,54 @@ jobs:
 
       - name: Merge Upstream
         run: |
+          git fetch upstream
+          
+          # Get list of workflow files in our repo
+          OUR_WORKFLOWS=$(git ls-files .github/workflows/*.yml .github/workflows/*.yaml 2>/dev/null | sed 's|^\.github/workflows/||' | sort -u)
+          
+          # Get list of workflow files in upstream
+          UPSTREAM_WORKFLOWS=$(git ls-tree -r upstream/main --name-only .github/workflows/ 2>/dev/null | sed 's|^\.github/workflows/||' | sort -u)
+          
+          # Find new workflow files (in upstream but not in ours)
+          NEW_WORKFLOWS=$(comm -13 <(echo "$OUR_WORKFLOWS") <(echo "$UPSTREAM_WORKFLOWS"))
+          
+          # Stash our workflow files to preserve them
+          if [ -n "$OUR_WORKFLOWS" ]; then
+            git stash push -m "preserve-workflows" -- .github/workflows/
+          fi
+          
+          # Merge upstream
           if ! git merge upstream/main --no-edit; then
             echo "Merge failed, resetting to upstream/main and force pushing..."
             git merge --abort
             git reset --hard upstream/main
+            
+            # Restore our workflow files
+            if [ -n "$OUR_WORKFLOWS" ]; then
+              git stash pop
+            fi
+            
+            # Add new workflow files from upstream
+            if [ -n "$NEW_WORKFLOWS" ]; then
+              for wf in $NEW_WORKFLOWS; do
+                git checkout upstream/main -- ".github/workflows/$wf"
+              done
+            fi
+            
             git push origin HEAD:main --force
           else
+            # Restore our workflow files after successful merge
+            if [ -n "$OUR_WORKFLOWS" ]; then
+              git stash pop
+            fi
+            
+            # Add new workflow files from upstream
+            if [ -n "$NEW_WORKFLOWS" ]; then
+              for wf in $NEW_WORKFLOWS; do
+                git checkout upstream/main -- ".github/workflows/$wf"
+              done
+              git commit -m "Add new workflow files from upstream"
+            fi
+            
             git push origin HEAD:main
           fi
