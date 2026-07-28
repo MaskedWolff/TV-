@@ -12,7 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.SYNC_TOKEN }}
           fetch-depth: 0
 
       - name: Configure Git
@@ -32,7 +32,7 @@ jobs:
             echo "Merge failed, resetting to upstream/main and force pushing..."
             git merge --abort
             git reset --hard upstream/main
-            git push origin HEAD:main --force
+            git push https://${{ secrets.SYNC_TOKEN }}@github.com/yashiscool123/TV-.git HEAD:main --force
           else
-            git push origin HEAD:main
+            git push https://${{ secrets.SYNC_TOKEN }}@github.com/yashiscool123/TV-.git HEAD:main
           fi
