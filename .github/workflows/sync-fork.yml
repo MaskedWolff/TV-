@@ -31,6 +31,7 @@ jobs:
 
       - name: Merge Upstream
         run: |
+          set +e
           git fetch upstream
           
           # Get list of workflow files in our repo
@@ -42,10 +43,17 @@ jobs:
           # Find new workflow files (in upstream but not in ours)
           NEW_WORKFLOWS=$(comm -13 <(echo "$OUR_WORKFLOWS") <(echo "$UPSTREAM_WORKFLOWS"))
           
-          # Stash our workflow files to preserve them (only if there are changes)
-          STASHED=false
+          # Check if there are local changes to workflow files
+          HAS_WORKFLOW_CHANGES=false
           if [ -n "$OUR_WORKFLOWS" ]; then
-            git stash push -m "preserve-workflows" -- .github/workflows/ 2>/dev/null && STASHED=true || true
+            git diff --quiet HEAD -- .github/workflows/ 2>/dev/null || HAS_WORKFLOW_CHANGES=true
+            git diff --quiet --cached -- .github/workflows/ 2>/dev/null || HAS_WORKFLOW_CHANGES=true
+          fi
+          
+          # Stash our workflow files only if there are local changes
+          STASHED=false
+          if [ "$HAS_WORKFLOW_CHANGES" = "true" ]; then
+            git stash push -m "preserve-workflows" -- .github/workflows/ && STASHED=true
           fi
           
           # Merge upstream
