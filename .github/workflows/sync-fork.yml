@@ -42,9 +42,10 @@ jobs:
           # Find new workflow files (in upstream but not in ours)
           NEW_WORKFLOWS=$(comm -13 <(echo "$OUR_WORKFLOWS") <(echo "$UPSTREAM_WORKFLOWS"))
           
-          # Stash our workflow files to preserve them
+          # Stash our workflow files to preserve them (only if there are changes)
+          STASHED=false
           if [ -n "$OUR_WORKFLOWS" ]; then
-            git stash push -m "preserve-workflows" -- .github/workflows/
+            git stash push -m "preserve-workflows" -- .github/workflows/ 2>/dev/null && STASHED=true || true
           fi
           
           # Merge upstream
@@ -54,7 +55,7 @@ jobs:
             git reset --hard upstream/main
             
             # Restore our workflow files
-            if [ -n "$OUR_WORKFLOWS" ]; then
+            if [ "$STASHED" = "true" ]; then
               git stash pop
             fi
             
@@ -68,7 +69,7 @@ jobs:
             git push origin HEAD:main --force
           else
             # Restore our workflow files after successful merge
-            if [ -n "$OUR_WORKFLOWS" ]; then
+            if [ "$STASHED" = "true" ]; then
               git stash pop
             fi
             
